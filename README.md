@@ -7,6 +7,7 @@ files.
 ## Prerequisites
 
 - Node.js 22.18 or newer
+- [pnpm](https://pnpm.io) (`npm install -g pnpm` if you do not have it)
 - [Bun](https://bun.sh) 1.3 or newer (the `mdcms` CLI runs on Bun)
 - Chrome or Firefox
 - An AI coding agent with MCP support (Claude Code, Cursor, Codex, ...)
@@ -14,8 +15,8 @@ files.
 ## Run it
 
 ```bash
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
 
 Open http://localhost:3000.

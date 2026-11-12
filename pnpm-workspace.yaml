@@ -1,0 +1,4 @@
+minimumReleaseAgeExclude:
+  # MDCMS packages install as soon as they are published, so a release made
+  # right before the workshop is picked up.
+  - "@mdcms/*"

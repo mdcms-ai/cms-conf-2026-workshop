@@ -3,14 +3,14 @@
 Follow along at your own pace. Each part ends with a checkpoint so you know
 you are ready for the next one.
 
-You need: Node.js 22.18+, Bun 1.3+, Chrome or Firefox, and an AI coding agent
-with MCP support. The server URL and the access code are provided in the room.
+You need: Node.js 22.18+, pnpm, Bun 1.3+, Chrome or Firefox, and an AI coding agent
+with MCP support. The server URL and the join link are provided in the room.
 
 ## 0. Run the starter
 
 ```bash
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
 
 Open http://localhost:3000. You see six posts. The badge in the header says
@@ -22,11 +22,11 @@ Check that Bun is installed, because the `mdcms` CLI runs on it:
 bun --version
 ```
 
-No Bun? `npm install -g bun`.
+No Bun? `npm install -g bun`. No pnpm? `npm install -g pnpm`.
 
 Create your account on the workshop server: open `<server URL>/join`, fill in
 your name, email, a password and a **project name** such as
-`field-notes-<your-name>`, and enter the access code from the screen. The
+`field-notes-<your-name>`. No access code is needed. The
 project is yours alone; nobody else in the room can see it. The confirmation
 shows the server URL, your email and your project name. You need all three
 below.
@@ -36,8 +36,8 @@ below.
 ### 1.1 Import your content
 
 ```bash
-npm install -D @mdcms/cli
-npx mdcms init
+pnpm add -D @mdcms/cli
+pnpm mdcms init
 ```
 
 Answer the wizard:
@@ -62,7 +62,7 @@ What happened:
   is now the source of truth for content; the repo keeps code and schema.
 
 ```bash
-npx mdcms status
+pnpm mdcms status
 git add -A && git commit -m "Adopt MDCMS"
 ```
 
@@ -111,10 +111,10 @@ export default defineConfig({
 Send the schema to the server:
 
 ```bash
-npx mdcms schema sync
+pnpm mdcms schema sync
 ```
 
-**Checkpoint:** `npx mdcms status` prints `Unchanged: 8 files` and
+**Checkpoint:** `pnpm mdcms status` prints `Unchanged: 8 files` and
 `Schema: In sync`.
 
 ## 2. CLI sync
@@ -123,9 +123,9 @@ Edit a post in your editor, for example change the title in
 `content/posts/hello-world.md`. Then:
 
 ```bash
-npx mdcms status          # "Modified locally (1)"
-npx mdcms push --dry-run  # shows the plan, writes nothing
-npx mdcms push            # confirm with Enter
+pnpm mdcms status          # "Modified locally (1)"
+pnpm mdcms push --dry-run  # shows the plan, writes nothing
+pnpm mdcms push            # confirm with Enter
 ```
 
 Your edit is now a draft on the server. Prove that the files are only a
@@ -133,20 +133,20 @@ working copy:
 
 ```bash
 rm -rf content
-npx mdcms pull
+pnpm mdcms pull
 ls content/posts
 ```
 
 Everything is back. `pull` also normalizes the frontmatter, so the key order in
 your files may change.
 
-**Checkpoint:** `content/posts` has six files again and `npx mdcms status`
+**Checkpoint:** `content/posts` has six files again and `pnpm mdcms status`
 reports no drift.
 
 ## 3. Studio in your app
 
 ```bash
-npm install @mdcms/studio
+pnpm add @mdcms/studio
 ```
 
 Create `app/admin/[[...path]]/page.tsx`:
@@ -231,7 +231,7 @@ padding: 0 }` reset. The starter avoids it; remove it from your own app.
 ## 4. Read content with the SDK
 
 ```bash
-npm install @mdcms/sdk
+pnpm add @mdcms/sdk
 echo "MDCMS_SITE_API_KEY=<paste your site-read key>" >> .env.local
 ```
 
@@ -310,7 +310,7 @@ export async function getPost(slug: string): Promise<Post | undefined> {
 You can now uninstall `gray-matter` and `marked`.
 
 Open http://localhost:3000. The badge says `content: mdcms`. If you see an
-authorization error, restart `npm run dev` so `.env.local` is loaded.
+authorization error, restart `pnpm dev` so `.env.local` is loaded.
 
 Try it: edit a post in Studio and refresh the site. Nothing changes. Publish
 the post and refresh again. Now it changes, with no rebuild and no deploy.
@@ -322,10 +322,11 @@ the post and refresh again. Now it changes, with no rebuild and no deploy.
 ### 5.1 Connect the MCP server
 
 `mdcms mcp` is a preview. It needs `@mdcms/cli` with MCP support; run
-`npx mdcms --help` and check that `mcp` is listed. If it is not, run
-`npm install -D @mdcms/cli@latest`.
+`pnpm mdcms --help` and check that `mcp` is listed. If it is not, run
+`pnpm add -D @mdcms/cli@latest`.
 
-Claude Code:
+The MCP command uses `npx`, which comes with Node and runs the CLI that pnpm
+installed. Claude Code:
 
 ```bash
 claude mcp add mdcms -- npx mdcms mcp
@@ -383,7 +384,7 @@ Ask the agent to set a post title to a number, or to publish everything.
 ### 5.5 Back to files
 
 ```bash
-npx mdcms pull
+pnpm mdcms pull
 git diff mdcms.config.ts
 ```
 
@@ -393,7 +394,7 @@ ordinary diff in `mdcms.config.ts`.
 ### Optional: the skills pack
 
 ```bash
-npx skills add mdcms-ai/mdcms/skills
+pnpm dlx skills add mdcms-ai/mdcms/skills
 ```
 
 This teaches your agent the file-based workflow from part 2: edit local
