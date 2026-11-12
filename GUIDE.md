@@ -5,8 +5,8 @@ agent. Each one is followed by a **Without an agent** section that reaches the
 same result by hand: use it if your agent gets stuck or you do not have one.
 Each part ends with a checkpoint so you know you are ready for the next one.
 
-You need: Node.js 22.18+, pnpm, Chrome or Firefox, and an AI coding agent with
-MCP support. The server URL and the join link are provided in the room.
+You need: Node.js 22.18+, pnpm, Chrome or Firefox (not a private window), and
+an AI coding agent with MCP support. The server URL and the join link are provided in the room.
 
 ## 0. Set up
 
@@ -108,7 +108,9 @@ reuses the login from `mdcms init`, so your agent has the same permissions as
 your CLI.
 
 Restart your agent from the project folder so it loads the skills and the MCP
-server. Check that `mdcms` is connected (in Claude Code: `/mcp`). Then ask:
+server (in the Claude Code VS Code extension, open a new chat). Check that
+`mdcms` is connected (in Claude Code: `/mcp`). There is nothing to sign in to:
+the MCP server uses the key `mdcms init` stored. Then ask:
 
 ```text
 What content types does this MDCMS project have?
@@ -287,8 +289,9 @@ Troubleshooting:
 padding: 0 }` reset. The starter avoids it; remove it from your own app.
 - The editor says "Read-only": the page must use `prepareStudioConfig` as
   shown above so Studio receives the schema hash.
-- Sign-in does nothing: use Chrome or Firefox and allow third-party cookies
-  for this page.
+- Sign-in returns to the sign-in form without an error: your browser blocks
+  the cookie Studio signs in with (Safari, Brave, Helium and private windows
+  do). Use regular Chrome or Firefox.
 - 404 on `/admin`: the folder name must be exactly `[[...path]]`.
 
 **Checkpoint:** you are signed in to Studio at `/admin` and one post is
