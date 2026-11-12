@@ -1,39 +1,41 @@
 # Workshop guide
 
-Follow along at your own pace. Each part ends with a checkpoint so you know
-you are ready for the next one.
+Follow along at your own pace. Most steps are a prompt you give your AI coding
+agent. Each one is followed by a **Without an agent** section that reaches the
+same result by hand: use it if your agent gets stuck or you do not have one.
+Each part ends with a checkpoint so you know you are ready for the next one.
 
-You need: Node.js 22.18+, pnpm, Bun 1.3+, Chrome or Firefox, and an AI coding agent
-with MCP support. The server URL and the join link are provided in the room.
+You need: Node.js 22.18+, pnpm, Chrome or Firefox, and an AI coding agent with
+MCP support. The server URL and the join link are provided in the room.
 
-## 0. Run the starter
+## 0. Set up
 
 ```bash
+git clone https://github.com/mdcms-ai/cms-conf-2026-workshop
+cd cms-conf-2026-workshop
 pnpm install
 pnpm dev
 ```
 
+No pnpm? `npm install -g pnpm`.
+
 Open http://localhost:3000. You see six posts. The badge in the header says
-`content: files`: every post is a Markdown file in `content/posts`.
+`content: files`: every post is a Markdown file in `content/posts`. Keep the
+blog on port 3000; Studio sign-in only works from `http://localhost:3000`.
 
-Check that Bun is installed, because the `mdcms` CLI runs on it:
+Create your account on the workshop server: open `<server URL>/join` and fill
+in your name, email and a password. The **project name** fills in from your
+name; you can change it. No access code is needed. The project is yours alone;
+nobody else in the room can see it. The panel next to the form shows the
+answers `mdcms init` will ask for: the server URL, your project name and
+`production`. Keep the page open after you register.
 
-```bash
-bun --version
-```
+**Checkpoint:** the blog runs with the `content: files` badge, you are
+registered, and your agent starts in the `cms-conf-2026-workshop` folder.
 
-No Bun? `npm install -g bun`. No pnpm? `npm install -g pnpm`.
+## 1. Bring your content in
 
-Create your account on the workshop server: open `<server URL>/join`, fill in
-your name, email, a password and a **project name** such as
-`field-notes-<your-name>`. No access code is needed. The
-project is yours alone; nobody else in the room can see it. The confirmation
-shows the server URL, your email and your project name. You need all three
-below.
-
-## 1. Schema in TypeScript
-
-### 1.1 Import your content
+Everyone does this part by hand.
 
 ```bash
 pnpm add -D @mdcms/cli
@@ -66,13 +68,90 @@ pnpm mdcms status
 git add -A && git commit -m "Adopt MDCMS"
 ```
 
-### 1.2 Refine the schema
+**Checkpoint:** `pnpm mdcms status` prints `Unchanged: 8 files` and
+`Schema: In sync`.
+
+## 2. Connect your agent
+
+Install the MDCMS skills pack. It teaches your agent how to set up Studio, the
+SDK, schema changes and content edits. The installer asks which agents to
+install for; pick yours.
+
+```bash
+pnpm dlx skills add mdcms-ai/mdcms/skills
+```
+
+Add the MDCMS MCP server. It gives your agent typed tools on the content API:
+`get_schema`, `list_documents`, `get_document`, `create_document`,
+`update_document`, `publish_document`, `sync_schema`. Writes through these
+tools are drafts.
+
+Claude Code:
+
+```bash
+claude mcp add mdcms -- npx mdcms mcp
+```
+
+Other clients, in `.mcp.json` at the project root (check your client's docs
+for the file it reads):
+
+```json
+{
+  "mcpServers": {
+    "mdcms": { "command": "npx", "args": ["mdcms", "mcp"] }
+  }
+}
+```
+
+`npx` comes with Node and runs the CLI that pnpm installed. The MCP server
+reuses the login from `mdcms init`, so your agent has the same permissions as
+your CLI.
+
+Restart your agent from the project folder so it loads the skills and the MCP
+server. Check that `mdcms` is connected (in Claude Code: `/mcp`). Then ask:
+
+```text
+What content types does this MDCMS project have?
+```
+
+The agent calls `get_schema` and names the `author` and `post` types.
+
+Troubleshooting:
+
+- `mcp` is not listed in `pnpm mdcms --help`: run
+  `pnpm add -D @mdcms/cli@latest`.
+- The MCP server does not start in a desktop app (Cursor, Claude Desktop): the
+  app does not see Node on its PATH. Use a terminal agent, or put the full
+  path to `npx` in the MCP config.
+
+`mdcms mcp` is a preview.
+
+### Without an agent
+
+Skip this part. In part 3, follow the **Without an agent** section of each
+step.
+
+**Checkpoint:** your agent answers with the `author` and `post` types.
+
+## 3. Let the agent drive
+
+### 3.1 Extend the schema
+
+```text
+Add an author field to the post type that references the author type, fill it in for every post, and sync the schema to MDCMS.
+```
+
+The agent adds an `author` reference to the `post` type in `mdcms.config.ts`,
+syncs the schema to the server, then sets an author on each of the six posts.
+A reference holds an author document id; the server checks that the id points
+to an author. The post changes are drafts.
+
+#### Without an agent
 
 Open `mdcms.config.ts` and replace the `types` with named definitions:
 
 ```ts
-import { defineConfig, defineType, fieldTypes } from "@mdcms/cli";
-import { z } from "zod";
+import { defineConfig, defineType, fieldTypes, z } from "@mdcms/cli";
 
 const author = defineType("author", {
   directory: "content/authors",
@@ -114,36 +193,32 @@ Send the schema to the server:
 pnpm mdcms schema sync
 ```
 
-**Checkpoint:** `pnpm mdcms status` prints `Unchanged: 8 files` and
-`Schema: In sync`.
+Setting an author on each post is optional in this path; the rest of the
+workshop does not depend on it.
 
-## 2. CLI sync
+**Checkpoint:** `mdcms.config.ts` has the `author` field and
+`pnpm mdcms status` prints `Schema: In sync`.
 
-Edit a post in your editor, for example change the title in
-`content/posts/hello-world.md`. Then:
+### 3.2 Add Studio
 
-```bash
-pnpm mdcms status          # "Modified locally (1)"
-pnpm mdcms push --dry-run  # shows the plan, writes nothing
-pnpm mdcms push            # confirm with Enter
+```text
+Add MDCMS Studio to this Next.js app at /admin.
 ```
 
-Your edit is now a draft on the server. Prove that the files are only a
-working copy:
+The agent installs `@mdcms/studio` and adds a route under
+`app/admin/[[...path]]`. The workshop server already allows
+`http://localhost:3000`, so nothing needs to change on the server.
 
-```bash
-rm -rf content
-pnpm mdcms pull
-ls content/posts
-```
+Open http://localhost:3000/admin and sign in with the account you registered.
 
-Everything is back. `pull` also normalizes the frontmatter, so the key order in
-your files may change.
+Try it:
 
-**Checkpoint:** `content/posts` has six files again and `pnpm mdcms status`
-reports no drift.
+1. Content, post, open "Hello, world". Change some text. It autosaves a draft.
+2. Open the panel on the right. The fields come from your schema, including
+   `author`.
+3. Click **Publish** and add a change summary. Look at the History tab.
 
-## 3. Studio in your app
+#### Without an agent
 
 ```bash
 pnpm add @mdcms/studio
@@ -204,20 +279,7 @@ export function AdminStudioClient(props: {
 }
 ```
 
-Open http://localhost:3000/admin and sign in with the account you
-registered.
-
-Try it:
-
-1. Content, post, open "Hello, world". Change some text. It autosaves a draft.
-2. Open the panel on the right. The fields come from your schema.
-3. Click **Publish** and add a change summary. Look at the History tab.
-4. Go back to the post list, tick the checkbox in the header to select all
-   posts, and click **Publish**.
-5. Settings, API keys, **Create API Key**. Label `site-read`, scope
-   `content:read` only. Copy the key; it is shown once.
-
-**Checkpoint:** all six posts show `PUBLISHED` and you have a `site-read` key.
+Then open http://localhost:3000/admin and try it as described above.
 
 Troubleshooting:
 
@@ -227,17 +289,81 @@ padding: 0 }` reset. The starter avoids it; remove it from your own app.
   shown above so Studio receives the schema hash.
 - Sign-in does nothing: use Chrome or Firefox and allow third-party cookies
   for this page.
+- 404 on `/admin`: the folder name must be exactly `[[...path]]`.
 
-## 4. Read content with the SDK
+**Checkpoint:** you are signed in to Studio at `/admin` and one post is
+published.
+
+### 3.3 Normalize the tags
+
+Keep Studio's post list (Content, post) open next to your agent and prompt:
+
+```text
+Normalize the tags on all posts to lowercase-kebab-case. Save the changes as drafts in MDCMS; do not publish.
+```
+
+The agent updates the posts whose tags need it. They are drafts: in Studio,
+"Hello, world" (published in 3.2) shows unpublished changes again. Open it and
+compare the draft with the published version.
+
+Then review and publish: on the post list, tick the checkbox in the header to
+select all six posts and click **Publish**. All six now show `PUBLISHED`. The
+site reads only published content in 3.4, so do not skip this.
+
+#### Without an agent
+
+Bring your files up to date with the server first, then edit the tags in
+`content/posts/*.md` by hand:
 
 ```bash
-pnpm add @mdcms/sdk
+pnpm mdcms pull
+# edit the tags, for example "AI" to "ai" and "Engineering" to "engineering"
+pnpm mdcms status          # "Modified locally (...)"
+pnpm mdcms push --dry-run  # shows the plan, writes nothing
+pnpm mdcms push            # confirm with Enter
+```
+
+Your edits are now drafts on the server. Review and publish them in Studio as
+described above.
+
+**Checkpoint:** all six posts show `PUBLISHED` in Studio.
+
+### 3.4 Read content with the SDK
+
+First, by hand (an agent cannot create API keys): in Studio, go to Settings,
+API keys, **Create API Key**. Label `site-read`, scope `content:read` only.
+Copy the key; it is shown once. Add it to `.env.local`:
+
+```bash
 echo "MDCMS_SITE_API_KEY=<paste your site-read key>" >> .env.local
 ```
 
 Use the name `MDCMS_SITE_API_KEY`, not `MDCMS_API_KEY`. The CLI reads
 `MDCMS_API_KEY` from `.env` files and would use this read-only key instead of
 your login.
+
+Then prompt:
+
+```text
+Render the posts from MDCMS with @mdcms/sdk instead of reading the files in content/posts. The API key is in MDCMS_SITE_API_KEY.
+```
+
+The agent installs `@mdcms/sdk` and rewrites `lib/posts.ts`. The pages do not
+change. Open http://localhost:3000: the badge says `content: mdcms`. If it
+still says `content: files`, ask the agent to set `contentSource` in
+`lib/posts.ts` to `"mdcms"`. If you see an authorization error, restart
+`pnpm dev` so `.env.local` is loaded.
+
+Try it: edit a post in Studio and refresh the site. Nothing changes. Publish
+the post and refresh again. Now it changes, with no rebuild and no deploy.
+
+#### Without an agent
+
+Create the key as described above, then:
+
+```bash
+pnpm add @mdcms/sdk
+```
 
 Replace `lib/posts.ts` with:
 
@@ -309,96 +435,70 @@ export async function getPost(slug: string): Promise<Post | undefined> {
 
 You can now uninstall `gray-matter` and `marked`.
 
-Open http://localhost:3000. The badge says `content: mdcms`. If you see an
-authorization error, restart `pnpm dev` so `.env.local` is loaded.
-
-Try it: edit a post in Studio and refresh the site. Nothing changes. Publish
-the post and refresh again. Now it changes, with no rebuild and no deploy.
-
 **Checkpoint:** the site lists six posts and the badge says `content: mdcms`.
 
-## 5. Agents
+### 3.5 See the guardrails
 
-### 5.1 Connect the MCP server
+Two prompts that should fail, safely:
 
-`mdcms mcp` is a preview. It needs `@mdcms/cli` with MCP support; run
-`pnpm mdcms --help` and check that `mcp` is listed. If it is not, run
-`pnpm add -D @mdcms/cli@latest`.
+```text
+Publish all posts.
+```
 
-The MCP command uses `npx`, which comes with Node and runs the CLI that pnpm
-installed. Claude Code:
+Publishing is refused with `FORBIDDEN`: the key from `mdcms init` does not
+have the `content:publish` scope. The agent drafts, a person publishes. If the
+agent answers that everything is already published, ask it to call
+`publish_document` for the hello-world post.
+
+```text
+Use the mdcms MCP tool update_document to set the title of hello-world to the number 42 (a number, not text), and show me exactly what the server answers.
+```
+
+The update is rejected with `INVALID_FRONTMATTER` and nothing is written. The
+error names the field and the expected type, so the agent can correct itself.
+
+These are the four properties from the start of the workshop: a schema the
+agent can read, errors it can act on, drafts by default, and scoped
+credentials.
+
+#### Without an agent
+
+There is no CLI command for publishing; publishing happens in Studio. To see
+validation catch a bad value, set `title: 42` in
+`content/posts/hello-world.md` and run:
 
 ```bash
-claude mcp add mdcms -- npx mdcms mcp
+pnpm mdcms push --validate --dry-run
 ```
 
-Cursor and other clients, in `.mcp.json` at the project root:
+The CLI reports the field that does not match the schema. Change the title
+back afterwards.
 
-```json
-{
-  "mcpServers": {
-    "mdcms": { "command": "npx", "args": ["mdcms", "mcp"] }
-  }
-}
-```
-
-Start your agent from the project root. The MCP server reuses the login from
-`mdcms init`.
-
-Tools: `get_schema`, `list_documents`, `get_document`, `create_document`,
-`update_document`, `publish_document`, `sync_schema`.
-
-### 5.2 Exercise: a bulk edit
-
-Keep Studio open next to your agent and prompt:
-
-> Use the mdcms tools. Look at the tags on all posts and normalize them to
-> lowercase kebab-case.
-
-In Studio the touched posts now show unpublished changes. The site has not
-changed. Review, then publish them from the post list.
-
-### 5.3 Exercise: change the schema from a prompt
-
-> Add a numeric `readingTime` field (minutes) to the post type in
-> mdcms.config.ts, sync the schema, then set it for every post based on its
-> word count.
-
-The agent edits `mdcms.config.ts`, calls `sync_schema`, then updates each post.
-
-Bonus prompts:
-
-> Link every post to one of our authors.
-
-> Draft a new post announcing that our blog now runs on MDCMS.
-
-### 5.4 See the guardrails
-
-Ask the agent to set a post title to a number, or to publish everything.
-
-- Invalid frontmatter is rejected with `INVALID_FRONTMATTER` and nothing is
-  written.
-- Publishing is refused with `FORBIDDEN`: the key from `mdcms init` does not
-  have the `content:publish` scope. The agent drafts, a person publishes.
-
-### 5.5 Back to files
+## 4. Back to files
 
 ```bash
 pnpm mdcms pull
 git diff mdcms.config.ts
 ```
 
-The agent's content edits are in your working copy, and the schema change is an
-ordinary diff in `mdcms.config.ts`.
+Everything the agent and Studio changed is now in your working copy: lowercase
+tags, an author on each post, your Studio edits. The schema change is an
+ordinary diff in `mdcms.config.ts`. `pull` also normalizes the frontmatter, so
+the key order in your files may change.
 
-### Optional: the skills pack
+Prove that the files are only a working copy:
 
 ```bash
-pnpm dlx skills add mdcms-ai/mdcms/skills
+rm -rf content
+pnpm mdcms pull
+ls content/posts
 ```
 
-This teaches your agent the file-based workflow from part 2: edit local
-files, validate, push.
+Everything is back. On Windows without a Unix shell, use
+`Remove-Item -Recurse content` instead of `rm -rf content`.
+
+**Checkpoint:** `content/posts` has six files and `pnpm mdcms status` reports
+no drift.
 
 ## Running your own server
 
